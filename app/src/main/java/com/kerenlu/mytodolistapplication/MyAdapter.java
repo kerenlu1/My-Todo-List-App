@@ -69,10 +69,10 @@ class MyAdapter<String> extends ArrayAdapter<String> {
                 Button callButton = null;
                 java.lang.String phoneNum = null;
                 if (task.contains("call")) {
-                    Pattern pattern = Pattern.compile("\\d{3}-\\d{3}-\\d{4}");
+                    Pattern pattern = Pattern.compile("(\\d.*?\\s)");
                     Matcher matcher = pattern.matcher(task);
                     if (matcher.find()) {
-                        phoneNum = matcher.group(0);
+                        phoneNum = matcher.group(0).trim();
                     }
                     callButton = new Button(view.getContext());
                     callButton.setHint(phoneNum);
