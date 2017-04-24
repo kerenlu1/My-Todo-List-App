@@ -1,13 +1,13 @@
 package com.kerenlu.mytodolistapplication;
 
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.res.Resources;
-import android.graphics.Color;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -16,7 +16,6 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -30,6 +29,8 @@ public class MainActivity extends AppCompatActivity {
 
     ListView list;
     ArrayList<String> addArray = new ArrayList<String>();
+    TaskDbHelper mDbHelper = new TaskDbHelper(MainActivity.this);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,8 +38,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         list = (ListView) findViewById(R.id.taskList);
+
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        Cursor cursor = db.rawQuery("select * from " + TaskContract.TaskEntry.TABLE_NAME, null);
+        if (cursor.moveToFirst()){
+            addArray.add(cursor.getString(cursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_NAME_TITLE)));
+            while(cursor.moveToNext()){
+                addArray.add(cursor.getString(cursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_NAME_TITLE)));
+            }
+        }
+        ArrayAdapter<String> adapter = new MyAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, addArray);
+        list.setAdapter(adapter);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -68,6 +79,12 @@ public class MainActivity extends AppCompatActivity {
                             public void onClick(DialogInterface dialog, int which) {
                                 String task = String.valueOf(taskEditText.getText());
                                 task += " - " + newFragment.getDate();
+                                SQLiteDatabase db = mDbHelper.getWritableDatabase();
+                                // Create a new map of values, where column names are the keys
+                                ContentValues values = new ContentValues();
+                                values.put(TaskContract.TaskEntry.COLUMN_NAME_TITLE, task);
+                                // Insert the new row, returning the primary key value of the new row
+                                long newRowId = db.insert(TaskContract.TaskEntry.TABLE_NAME, null, values);
                                 Log.d(TAG, "Task to add: " + task);
                                 addArray.add(task);
                                 ArrayAdapter<String> adapter = new MyAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, addArray);

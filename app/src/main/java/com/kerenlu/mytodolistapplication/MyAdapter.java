@@ -3,6 +3,7 @@ package com.kerenlu.mytodolistapplication;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -28,9 +29,12 @@ import static android.R.id.list;
 
 class MyAdapter<String> extends ArrayAdapter<String> {
 
+    private TaskDbHelper mDbHelper;
 
     public MyAdapter(MainActivity mainActivity, int simple_list_item_1, ArrayList<String> addArray) {
         super(mainActivity, simple_list_item_1, addArray);
+        mDbHelper = new TaskDbHelper(getContext());
+
     }
 
     @Override
@@ -45,14 +49,21 @@ class MyAdapter<String> extends ArrayAdapter<String> {
         view.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                final String task = (String) MyAdapter.this.getItem(position).toString();
+                final java.lang.String  task = MyAdapter.this.getItem(position).toString();
                 AlertDialog dialog = new AlertDialog.Builder(view.getContext())
-                        .setTitle((CharSequence) task)
+                        .setTitle(task)
                         .setMessage("Are you sure you want to delete this task?")
                         .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                MyAdapter.this.remove(task);
+                                MyAdapter.this.remove((String)task);
+                                SQLiteDatabase db = mDbHelper.getReadableDatabase();
+                                // Define 'where' part of query.
+                                java.lang.String selection = TaskContract.TaskEntry.COLUMN_NAME_TITLE + " LIKE ?";
+                                // Specify arguments in placeholder order.
+                                java.lang.String[] selectionArgs = { task };
+                                // Issue SQL statement.
+                                db.delete(TaskContract.TaskEntry.TABLE_NAME, selection, selectionArgs);
                             }
                         })
                         .setNegativeButton("Cancel", null)
